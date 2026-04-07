@@ -31,6 +31,13 @@ class Autoblog_Module_System extends Autoblog_Module {
 	const NAME = __CLASS__;
 
 	/**
+	 * Missing add-ons collected during the current request.
+	 *
+	 * @var array
+	 */
+	private $_missing_addons = array();
+
+	/**
 	 * Constructor.
 	 *
 	 * @since 4.0.0
@@ -46,6 +53,10 @@ class Autoblog_Module_System extends Autoblog_Module {
 
 		// load text domain
 		$this->_add_action( 'plugins_loaded', 'load_textdomain' );
+
+		// surface recoverable configuration problems in admin.
+		$this->_add_action( 'admin_notices', 'render_missing_addons_notice' );
+		$this->_add_action( 'network_admin_notices', 'render_missing_addons_notice' );
 
 		// load network wide and blog wide addons
 		$this->load_network_addons();
@@ -319,11 +330,7 @@ class Autoblog_Module_System extends Autoblog_Module {
 			$plugins = (array)get_option( 'autoblog_activated_addons', array() );
 			$auto_plugins = apply_filters( 'autoblog_available_addons', $auto_plugins );
 
-			foreach ( $auto_plugins as $auto_plugin ) {
-				if ( in_array( $auto_plugin, $plugins ) ) {
-					include_once $directory . $auto_plugin;
-				}
-			}
+			$this->_load_selected_addons( $plugins, $auto_plugins, $directory, 'site' );
 
 			if ( $switched && function_exists( 'restore_current_blog' ) ) {
 				restore_current_blog();
@@ -358,12 +365,77 @@ class Autoblog_Module_System extends Autoblog_Module {
 			$plugins = (array)get_site_option( 'autoblog_networkactivated_addons', array() );
 			$auto_plugins = apply_filters( 'autoblog_available_addons', $auto_plugins );
 
-			foreach ( $auto_plugins as $auto_plugin ) {
-				if ( in_array( $auto_plugin, $plugins ) ) {
-					include_once $directory . $auto_plugin;
-				}
+			$this->_load_selected_addons( $plugins, $auto_plugins, $directory, 'network' );
+		}
+	}
+
+	/**
+	 * Loads selected add-ons while keeping missing files recoverable.
+	 *
+	 * @param array  $selected  Activated add-on filenames.
+	 * @param array  $available Available add-on filenames.
+	 * @param string $directory Add-on directory.
+	 * @param string $scope     Scope label.
+	 */
+	private function _load_selected_addons( array $selected, array $available, $directory, $scope ) {
+		$selected = array_values( array_unique( array_filter( array_map( 'strval', $selected ) ) ) );
+		$available = array_values( array_unique( array_filter( array_map( 'strval', $available ) ) ) );
+
+		foreach ( array_diff( $selected, $available ) as $missing ) {
+			$this->_record_missing_addon( $missing, $scope );
+		}
+
+		foreach ( $available as $auto_plugin ) {
+			if ( ! in_array( $auto_plugin, $selected, true ) ) {
+				continue;
+			}
+
+			$addon_file = $directory . $auto_plugin;
+			if ( is_readable( $addon_file ) ) {
+				include_once $addon_file;
+			} else {
+				$this->_record_missing_addon( $auto_plugin, $scope );
 			}
 		}
+	}
+
+	/**
+	 * Stores a missing add-on for admin notice rendering.
+	 *
+	 * @param string $addon Add-on filename.
+	 * @param string $scope Scope label.
+	 */
+	private function _record_missing_addon( $addon, $scope ) {
+		$key = $scope . ':' . $addon;
+		$this->_missing_addons[ $key ] = array(
+			'addon' => $addon,
+			'scope' => $scope,
+		);
+	}
+
+	/**
+	 * Displays a notice for missing activated add-ons.
+	 */
+	public function render_missing_addons_notice() {
+		$can_manage = current_user_can( 'manage_options' ) || current_user_can( 'manage_network_options' );
+		if ( empty( $this->_missing_addons ) || ! $can_manage ) {
+			return;
+		}
+
+		$messages = array();
+		foreach ( $this->_missing_addons as $missing ) {
+			$scope = 'network' === $missing['scope']
+				? __( 'network', 'autoblogtext' )
+				: __( 'site', 'autoblogtext' );
+			$messages[] = sprintf(
+				/* translators: 1: add-on filename, 2: activation scope */
+				__( '%1$s is marked active at the %2$s level but its file is missing or unreadable, so it was skipped.', 'autoblogtext' ),
+				'<code>' . esc_html( $missing['addon'] ) . '</code>',
+				esc_html( $scope )
+			);
+		}
+
+		echo '<div class="notice notice-warning"><p>' . implode( '<br>', $messages ) . '</p></div>';
 	}
 
 }

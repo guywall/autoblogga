@@ -73,7 +73,7 @@ class A_ForceFeedAddon extends Autoblog_Addon {
 	 * @param array $details The feed details.
 	 */
 	public function add_feed_option( $key, $details ) {
-        $table = !empty( $details->feed_meta ) ? maybe_unserialize( $details->feed_meta ) : array();
+        $table = ! empty( $details->feed_meta ) ? autoblog_maybe_unserialize_array( $details->feed_meta ) : array();
 
 		$this->_render_block_header( esc_html__( 'Force Feed', 'autoblogtext' ) );
 

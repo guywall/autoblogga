@@ -162,10 +162,10 @@ class Autoblog_Module_Page_Dashboard extends Autoblog_Module {
 
 		$feeds = array();
 		foreach ( $resutls as $result ) {
-			$details = unserialize( $result['feed_meta'] );
+			$details = autoblog_maybe_unserialize_array( $result['feed_meta'] );
 			$feeds[$result['feed_id']] = array(
-				'title'   => $details['title'],
-				'url'     => $details['url'],
+				'title'   => isset( $details['title'] ) ? $details['title'] : '',
+				'url'     => isset( $details['url'] ) ? $details['url'] : '',
 				'blog_id' => absint( $result['blog_id'] ),
 			);
 		}

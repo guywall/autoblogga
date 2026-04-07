@@ -13,9 +13,10 @@
 				postbox.find('select.cat').html('<option value="">Loading...</option>');
 
 				$.getJSON(ajaxurl, {action: 'autoblog-get-blog-authors', id: blog, nocache: new Date().getTime()}, function(ret) {
-					var opts = "";
+					var opts = "", authorId;
 					for (var author in ret.data) {
-						opts += "<option value='" + ret.data[author].user_id.toLowerCase() + "'>" + ret.data[author].user_login + "</option>";
+						authorId = ret.data[author].user_id || ret.data[author].ID || '';
+						opts += "<option value='" + String(authorId).toLowerCase() + "'>" + ret.data[author].user_login + "</option>";
 					}
 					postbox.find('select.altauthor').html(opts);
 					opts = '<option value="0">Use feed author</option>' + opts;

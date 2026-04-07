@@ -103,7 +103,7 @@ class A_FeatureImageCacheAddon extends Autoblog_Addon_Image {
 	 * @param int $post_id The post ID to attach featured image to.
 	 * @param array $details The actual feed settings.
 	 */
-	private function _check_post_for_media_thumbnail_images( SimplePie_Item $item, $post_id, $details ) {
+	private function _check_post_for_media_thumbnail_images( $item, $post_id, $details ) {
 		$set     = false;
 		$resutls = $item->get_item_tags( SIMPLEPIE_NAMESPACE_MEDIARSS, 'thumbnail' );
 		if ( isset( $resutls[0]['attribs']['']['url'] ) && filter_var( $resutls[0]['attribs']['']['url'], FILTER_VALIDATE_URL ) ) {
@@ -143,11 +143,11 @@ class A_FeatureImageCacheAddon extends Autoblog_Addon_Image {
 	 * @param int $post_id The post ID to attach featured image to.
 	 * @param array $details The actual feed settings.
 	 */
-	private function _check_post_for_enclosure_images( SimplePie_Item $item, $post_id, $details ) {
+	private function _check_post_for_enclosure_images( $item, $post_id, $details ) {
 		$set = false;
 
 		$enclosure = $item->get_enclosure();
-		if ( is_a( $enclosure, 'SimplePie_Enclosure' ) ) {
+		if ( autoblog_is_simplepie_enclosure( $enclosure ) ) {
 			$link      = $enclosure->get_link();
 			$link = strtok($link, '?');
 //			var_dump($enclosure->embed());
@@ -183,7 +183,7 @@ class A_FeatureImageCacheAddon extends Autoblog_Addon_Image {
 	 * @param int $post_id The post ID to attach featured image to.
 	 * @param array $details The actual feed settings.
 	 */
-	private function _check_post_for_content_images( $method, SimplePie_Item $item, $post_id, $details ) {
+	private function _check_post_for_content_images( $method, $item, $post_id, $details ) {
 		$images = $this->_get_remote_images_from_post_content( html_entity_decode( $item->get_content(), ENT_QUOTES, 'UTF-8' ) );
 		if ( ! empty( $images ) ) {
 			foreach ( $images as $key => $value ) {
@@ -265,7 +265,7 @@ class A_FeatureImageCacheAddon extends Autoblog_Addon_Image {
 	 * @param array $details The actual feed settings.
 	 * @param SimplePie_Item $item The instance of SimplePie_Item class.
 	 */
-	public function check_post_for_images( $post_id, $details, SimplePie_Item $item ) {
+	public function check_post_for_images( $post_id, $details, $item ) {
 		$method = trim( isset( $details['featuredimage'] ) ? $details['featuredimage'] : '' );
 		if ( empty( $method ) ) {
 			return;

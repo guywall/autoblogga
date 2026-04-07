@@ -1,13 +1,18 @@
 <?php
 /*
-Plugin Name: AutoBlog
-Version: 4.1.1
-Plugin URI: http://premium.wpmudev.org/project/autoblog
+Plugin Name: Autoblogga
+Version: 1.0
+Plugin URI: https://premium.wpmudev.org/project/autoblog
 Description: This plugin automatically posts content from RSS feeds to different blogs on your WordPress Multisite...
 Author: WPMU DEV
-Author URI: http://premium.wpmudev.org/
+Author URI: https://premium.wpmudev.org/
 Text Domain: autoblogtext
 Domain Path: /autoblogincludes/languages/
+Requires at least: 6.9
+Requires PHP: 8.1
+License: GPLv2 or later
+License URI: https://www.gnu.org/licenses/gpl-2.0.html
+Update URI: false
 WDP ID: 97
 */
 
@@ -45,7 +50,80 @@ function autoblog_encode_url_component( $matches ) {
 	return urlencode( $matches[0] );
 }
 
-require_once dirname( __FILE__ ) . '/autoblogincludes/extra/wpmudev-dash-notification.php';
+/**
+ * Registers SimplePie legacy aliases when WordPress ships namespaced classes.
+ */
+function autoblog_setup_simplepie_aliases() {
+	$aliases = array(
+		'SimplePie\\SimplePie' => 'SimplePie',
+		'SimplePie\\Item'      => 'SimplePie_Item',
+		'SimplePie\\Enclosure' => 'SimplePie_Enclosure',
+		'SimplePie\\Author'    => 'SimplePie_Author',
+	);
+
+	foreach ( $aliases as $source => $alias ) {
+		if ( class_exists( $source ) && ! class_exists( $alias, false ) ) {
+			class_alias( $source, $alias );
+		}
+	}
+}
+
+/**
+ * Returns an array from serialized plugin data.
+ *
+ * @param mixed $value The raw value.
+ * @return array
+ */
+function autoblog_maybe_unserialize_array( $value ) {
+	$value = maybe_unserialize( $value );
+
+	return is_array( $value ) ? $value : array();
+}
+
+/**
+ * Determines whether a value behaves like a SimplePie feed instance.
+ *
+ * @param mixed $value The value to inspect.
+ * @return bool
+ */
+function autoblog_is_simplepie_instance( $value ) {
+	return is_object( $value )
+		&& method_exists( $value, 'get_item_quantity' )
+		&& method_exists( $value, 'get_item' );
+}
+
+/**
+ * Determines whether a value behaves like a SimplePie item instance.
+ *
+ * @param mixed $value The value to inspect.
+ * @return bool
+ */
+function autoblog_is_simplepie_item( $value ) {
+	return is_object( $value )
+		&& method_exists( $value, 'get_title' )
+		&& method_exists( $value, 'get_permalink' )
+		&& method_exists( $value, 'get_content' );
+}
+
+/**
+ * Determines whether a value behaves like a SimplePie enclosure instance.
+ *
+ * @param mixed $value The value to inspect.
+ * @return bool
+ */
+function autoblog_is_simplepie_enclosure( $value ) {
+	return is_object( $value ) && method_exists( $value, 'get_link' );
+}
+
+$autoblog_dash_notification = dirname( __FILE__ ) . '/autoblogincludes/extra/wpmudev-dash-notification.php';
+if ( is_readable( $autoblog_dash_notification ) ) {
+	require_once $autoblog_dash_notification;
+	define( 'AUTOBLOG_HAS_WPMUDEV_DASH_NOTIFICATION', true );
+} else {
+	define( 'AUTOBLOG_HAS_WPMUDEV_DASH_NOTIFICATION', false );
+}
+
+autoblog_setup_simplepie_aliases();
 
 /**
  * Parses URL addresses contained multibyte characters.

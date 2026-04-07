@@ -50,8 +50,12 @@ class A_DisableSanitization extends Autoblog_Addon {
 	 * @param SimplePie $feed The SimplePie feed.
 	 * @param array $details The feed details.
 	 */
-	public function set_feed_sanitize_object( SimplePie $feed, array $details ) {
-		if ( isset( $details['disablesanitization'] ) && $details['disablesanitization'] == 1 ) {
+	public function set_feed_sanitize_object( $feed, array $details ) {
+		if (
+			isset( $details['disablesanitization'] ) && $details['disablesanitization'] == 1
+			&& is_object( $feed )
+			&& property_exists( $feed, 'sanitize' )
+		) {
 			// setup sanitize filter. we need to manually override sanitize object
 			// because it is already been initialized.
 			$feed->sanitize = new Autoblog_SimplePie_Sanitize();
@@ -69,7 +73,7 @@ class A_DisableSanitization extends Autoblog_Addon {
 	 * @param array $details The feed details.
 	 */
 	public function add_feed_option( $key, $details ) {
-        $table = !empty( $details->feed_meta ) ? maybe_unserialize( $details->feed_meta ) : array();
+        $table = ! empty( $details->feed_meta ) ? autoblog_maybe_unserialize_array( $details->feed_meta ) : array();
 
 		$this->_render_block_header( esc_html__( 'Disable Feed Sanitization', 'autoblogtext' ) );
 

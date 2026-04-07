@@ -134,7 +134,7 @@ class Autoblog_Addon_Video extends Autoblog_Addon {
 	}
 
 
-	function process_content( $old_content, $details, SimplePie_Item $item ) {
+	function process_content( $old_content, $details, $item ) {
 		//we need to check does the disable sanitize add-on activated
 		if ( isset( $details['disablesanitization'] ) && $details['disablesanitization'] == 1 ) {
 			return $old_content;
@@ -203,7 +203,7 @@ class Autoblog_Addon_Video extends Autoblog_Addon {
 	 *
 	 * @return array The post data.
 	 */
-	public function process_video( array $data, array $details, SimplePie_Item $item ) {
+	public function process_video( array $data, array $details, $item ) {
 		$permalink = htmlspecialchars_decode( $item->get_permalink() );
 
 		if ( preg_match( '#^https?://(www\.)?youtube\.com/watch#i', $permalink ) ) { 

@@ -53,7 +53,7 @@ class Autoblog_Render_Dashboard_Page extends Autoblog_Render {
 		?><div class="wrap">
 			<div class="icon32" id="icon-edit"><br></div>
 			<h2>
-				<?php esc_html_e( 'Autoblog Dashboard', 'autoblogtext' ) ?>
+				<?php esc_html_e( 'Autoblogga Dashboard', 'autoblogtext' ) ?>
 				<a class="add-new-h2" href="<?php echo esc_url( $this->export_log_url ) ?>"><?php esc_html_e( 'Export Log', 'autoblogtext' ) ?></a>
 				<a class="add-new-h2" href="<?php echo esc_url( $this->clear_log_url ) ?>" onclick="return confirm('<?php esc_html_e( 'Do you really want to delete log records?', 'autoblogtext' ) ?>')">
 					<?php esc_html_e( 'Clear Log', 'autoblogtext' ) ?>
@@ -251,18 +251,23 @@ class Autoblog_Render_Dashboard_Page extends Autoblog_Render {
 
 			case Autoblog_Plugin::LOG_FETCHING_ERRORS:
 				$glyph = 'warning-sign';
-				$message = implode( '<br>', unserialize( $log['log_info'] ) );
+				$message = implode( '<br>', (array) maybe_unserialize( $log['log_info'] ) );
 				break;
 
 			case Autoblog_Plugin::LOG_DUPLICATE_POST:
 				$glyph = 'thumbs-up';
-				$info = unserialize( $log['log_info'] );
+				$info = autoblog_maybe_unserialize_array( $log['log_info'] );
+				$checked_key = isset( $info['checked'] ) ? $info['checked'] : '';
 				$message = sprintf(
 					esc_html_x( '%s has been already imported.', '{Post title} has been already imported.', 'autoblogtext' ),
-					sprintf( '<a href="%s" target="_blank"><b>%s</b></a>', esc_url( $info[$info['checked']] ), esc_html( $info['title'] ) )
+					sprintf(
+						'<a href="%s" target="_blank"><b>%s</b></a>',
+						esc_url( isset( $info[ $checked_key ] ) ? $info[ $checked_key ] : '' ),
+						esc_html( isset( $info['title'] ) ? $info['title'] : '' )
+					)
 				);
 
-				$permalink = get_permalink( $info['post_id'] );
+				$permalink = get_permalink( isset( $info['post_id'] ) ? $info['post_id'] : 0 );
 				if ( $permalink ) {
 					$message .= sprintf( ' <a href="%s" target="_blank"><small>(%s)</small></a>', $permalink, esc_html__( 'view post', 'autoblogtext' ) );
 				}
@@ -280,13 +285,17 @@ class Autoblog_Render_Dashboard_Page extends Autoblog_Render {
 
 			case Autoblog_Plugin::LOG_POST_INSERT_SUCCESS:
 				$glyph = 'ok-sign';
-				$info = unserialize( $log['log_info'] );
+				$info = autoblog_maybe_unserialize_array( $log['log_info'] );
 				$message = sprintf(
 					esc_html_x( '%s has been imported successfully.', '{Post title} has been imported successfully.', 'autoblogtext' ),
-					sprintf( '<a href="%s" target="_blank"><b>%s</b></a>', esc_url( $info['link'] ), esc_html( $info['title'] ) )
+					sprintf(
+						'<a href="%s" target="_blank"><b>%s</b></a>',
+						esc_url( isset( $info['link'] ) ? $info['link'] : '' ),
+						esc_html( isset( $info['title'] ) ? $info['title'] : '' )
+					)
 				);
 
-				$permalink = get_permalink( $info['post_id'] );
+				$permalink = get_permalink( isset( $info['post_id'] ) ? $info['post_id'] : 0 );
 				if ( $permalink ) {
 					$message .= sprintf( ' <a href="%s" target="_blank"><small>(%s)</small></a>', $permalink, esc_html__( 'view post', 'autoblogtext' ) );
 				}
@@ -294,13 +303,17 @@ class Autoblog_Render_Dashboard_Page extends Autoblog_Render {
 
 			case Autoblog_Plugin::LOG_POST_UPDATE_SUCCESS:
 				$glyph = 'refresh';
-				$info = unserialize( $log['log_info'] );
+				$info = autoblog_maybe_unserialize_array( $log['log_info'] );
 				$message = sprintf(
 					esc_html_x( '%s has been updated successfully.', '{Post title} has been updated successfully.', 'autoblogtext' ),
-					sprintf( '<a href="%s" target="_blank"><b>%s</b></a>', esc_url( $info['link'] ), esc_html( $info['title'] ) )
+					sprintf(
+						'<a href="%s" target="_blank"><b>%s</b></a>',
+						esc_url( isset( $info['link'] ) ? $info['link'] : '' ),
+						esc_html( isset( $info['title'] ) ? $info['title'] : '' )
+					)
 				);
 
-				$permalink = get_permalink( $info['post_id'] );
+				$permalink = get_permalink( isset( $info['post_id'] ) ? $info['post_id'] : 0 );
 				if ( $permalink ) {
 					$message .= sprintf( ' <a href="%s" target="_blank"><small>(%s)</small></a>', $permalink, esc_html__( 'view post', 'autoblogtext' ) );
 				}

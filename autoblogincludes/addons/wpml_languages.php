@@ -23,7 +23,7 @@ class Autoblog_WPML_languages{
 
 	}
 
-	function get_feed_language( SimplePie_Item $item ){
+	function get_feed_language( $item ){
 		global $wpdb;
 		
 		if( !defined('ICL_SITEPRESS_VERSION')) return; //no wpml
@@ -40,7 +40,7 @@ class Autoblog_WPML_languages{
 		return $language_code;
 	}
 
-	function notify_wpml( $post_id, array $details, SimplePie_Item $item) {
+	function notify_wpml( $post_id, array $details, $item) {
 		global $wpdb;
 
 		if( !defined('ICL_SITEPRESS_VERSION')) return; //no wpml

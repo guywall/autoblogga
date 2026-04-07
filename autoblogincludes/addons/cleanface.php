@@ -16,7 +16,7 @@ class Autoblog_Clean_Face{
 		add_filter( 'autoblog_pre_post_insert', array( &$this, 'clean_non_validating_feeds'), 12, 3 );
 	}
 
-	function clean_non_validating_feeds(array $data, array $details, SimplePie_Item $item) {
+	function clean_non_validating_feeds(array $data, array $details, $item) {
 
 		// post title decode entities
 		$data['post_title'] = html_entity_decode($data['post_title'],ENT_QUOTES );

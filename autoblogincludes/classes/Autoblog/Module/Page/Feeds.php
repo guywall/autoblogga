@@ -110,7 +110,8 @@ class Autoblog_Module_Page_Feeds extends Autoblog_Module {
 
 		foreach ( $blogusers as $buser ) {
 			$data[] = array(
-				'user_id'    => $buser->user_id,
+				'user_id'    => $buser->ID,
+				'ID'         => $buser->ID,
 				'user_login' => $buser->user_login,
 			);
 		}
@@ -309,7 +310,7 @@ class Autoblog_Module_Page_Feeds extends Autoblog_Module {
 		}
 
 		if ( !empty( $feed ) ) {
-			$feed_data = @unserialize( $feed['feed_meta'] );
+			$feed_data = autoblog_maybe_unserialize_array( $feed['feed_meta'] );
 			$feed_data['feed_meta'] = $feed['feed_meta'];
 			$feed_data['feed_id'] = $feed_id;
 		}

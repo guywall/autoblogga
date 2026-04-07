@@ -28,7 +28,7 @@
 class Autoblog_Plugin {
 
 	const NAME    = 'autoblog';
-	const VERSION = '4.0.6';
+	const VERSION = '1.0';
 
 	const SCHEDULE_PROCESS = 'autoblog_process_feeds';
 

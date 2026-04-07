@@ -82,7 +82,7 @@ class Autoblog_Addon_Youtube extends Autoblog_Addon
         $this->_render_block_element(__('Youtube Iframe', 'autoblogtext'), $textarea);
     }
 
-    function process_content($old_content, $details, SimplePie_Item $item)
+    function process_content($old_content, $details, $item)
     {
         //we will remove the post sanitize for cron
         remove_filter('content_save_pre', 'wp_filter_post_kses');
@@ -103,7 +103,7 @@ class Autoblog_Addon_Youtube extends Autoblog_Addon
         return $content;
     }
 
-    function _find_in_content($method, SimplePie_Item $item, $old_content, $details)
+    function _find_in_content($method, $item, $old_content, $details)
     {
         //we need to check does the disable santinitize add-on activated
         //force autoblog not strip iframe
@@ -190,7 +190,7 @@ class Autoblog_Addon_Youtube extends Autoblog_Addon
      *
      * @return array The post data.
      */
-    public function process_video(array $data, array $details, SimplePie_Item $item)
+    public function process_video(array $data, array $details, $item)
     {
         $permalink = htmlspecialchars_decode($item->get_permalink());
 

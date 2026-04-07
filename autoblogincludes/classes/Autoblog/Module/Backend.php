@@ -29,6 +29,7 @@
 class Autoblog_Module_Backend extends Autoblog_Module {
 
 	const NAME = __CLASS__;
+	const GOOGLE_CHARTS_LOADER = 'https://www.gstatic.com/charts/loader.js';
 
 	/**
 	 * Array of admin pages hooks.
@@ -69,7 +70,7 @@ class Autoblog_Module_Backend extends Autoblog_Module {
 	 * @param string $page_hook The current page hook.
 	 */
 	public function enqueue_scripts( $page_hook ) {
-		if ( !in_array( $page_hook, $this->_admin_pages ) ) {
+		if ( !in_array( $page_hook, $this->_admin_pages, true ) ) {
 			return;
 		}
 
@@ -83,14 +84,15 @@ class Autoblog_Module_Backend extends Autoblog_Module {
 			wp_enqueue_style( 'autoblog-bootstrap-glyphs', AUTOBLOG_ABSURL . 'css/bootstrap-glyphs.min.css', array(), '3.0.2' );
 
 			wp_enqueue_script( 'autoblog-slimscroll', AUTOBLOG_ABSURL . 'js/jquery.slimscroll.min.js', array( 'jquery' ), Autoblog_Plugin::VERSION, true );
-			wp_enqueue_script( 'autoblog-google-jsapi', '//www.google.com/jsapi', null, null, true );
-			wp_enqueue_script( 'autoblog-dashboard', AUTOBLOG_ABSURL . 'js/dashboard.js', array( 'jquery', 'autoblog-google-jsapi', 'autoblog-slimscroll' ), Autoblog_Plugin::VERSION, true );
+			wp_enqueue_script( 'autoblog-google-charts', self::GOOGLE_CHARTS_LOADER, array(), null, true );
+			wp_enqueue_script( 'autoblog-dashboard', AUTOBLOG_ABSURL . 'js/dashboard.js', array( 'jquery', 'autoblog-google-charts', 'autoblog-slimscroll' ), Autoblog_Plugin::VERSION, true );
 
 			wp_localize_script( 'autoblog-dashboard', 'autoblog', array(
 				'date_column'      => __( 'Date', 'autoblogtext' ),
 				'processes_column' => __( 'Processed Feeds', 'autoblogtext' ),
 				'imports_column'   => __( 'Imported Items', 'autoblogtext' ),
 				'errors_column'    => __( 'Errors', 'autoblogtext' ),
+				'chart_unavailable' => __( 'Chart data is available below, but the dashboard chart could not be loaded.', 'autoblogtext' ),
 				'date'             => date( 'm-d-Y', current_time( 'timestamp' ) ),
 			) );
 		}
@@ -125,12 +127,12 @@ class Autoblog_Module_Backend extends Autoblog_Module {
 		$capability = $is_network_admin ? 'manage_network_options' : 'manage_options';
 
 		// autoblog menu
-		$page_title = __( 'Autoblog', 'autoblogtext' );
+		$page_title = __( 'Autoblogga', 'autoblogtext' );
 		$icon = AUTOBLOG_ABSURL . 'images/menu.png';
 		add_menu_page( $page_title, $page_title, $capability, 'autoblog', array( $this, 'handle_dashboard_page' ), $icon );
 
 		// adding dashboad submenu page
-		$page_title = __( 'Autoblog Dashboard', 'autoblogtext' );
+		$page_title = __( 'Autoblogga Dashboard', 'autoblogtext' );
 		$menu_title = __( 'Dashboard', 'autoblogtext' );
 		$this->_admin_pages['dashboard'] = add_submenu_page( 'autoblog', $page_title, $menu_title, $capability, 'autoblog',  array( $this, 'handle_dashboard_page' ) );
 
@@ -139,7 +141,7 @@ class Autoblog_Module_Backend extends Autoblog_Module {
 		$this->_admin_pages['feeds'] = add_submenu_page( 'autoblog', $page_title, $page_title, $capability, 'autoblog_admin', array( $this, 'handle_feeds_page' ) );
 
 		// addons page
-		$page_title = __( 'Autoblog Add-ons', 'autoblogtext' );
+		$page_title = __( 'Autoblogga Add-ons', 'autoblogtext' );
 		$menu_title = __( 'Add-ons', 'autoblogtext' );
 		if ( $is_network_admin ) {
 			$this->_admin_pages['addons'] = add_submenu_page( 'autoblog', $page_title, $menu_title, $capability, 'autoblog_addons', array( $this, 'handle_network_addons_page' ) );
@@ -156,11 +158,17 @@ class Autoblog_Module_Backend extends Autoblog_Module {
 			$pages[] = $is_network_admin ? "{$page}-network" : $page;
 		}
 
-		$wpmudev_notices[] = array(
-			'id'      => 97,
-			'name'    => 'AutoBlog',
-			'screens' => $pages,
-		);
+		if ( defined( 'AUTOBLOG_HAS_WPMUDEV_DASH_NOTIFICATION' ) && AUTOBLOG_HAS_WPMUDEV_DASH_NOTIFICATION ) {
+			if ( ! is_array( $wpmudev_notices ) ) {
+				$wpmudev_notices = array();
+			}
+
+			$wpmudev_notices[] = array(
+				'id'      => 97,
+				'name'    => 'Autoblogga',
+				'screens' => $pages,
+			);
+		}
 	}
 
 	/**

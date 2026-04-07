@@ -421,7 +421,7 @@ class Autoblog_Table_Feeds extends Autoblog_Table {
 
 		foreach ( $this->items as &$item ) {
 			$item['id'] = $item['feed_id'];
-			$item['feed_meta'] = @unserialize( $item['feed_meta'] );
+			$item['feed_meta'] = autoblog_maybe_unserialize_array( $item['feed_meta'] );
 		}
 
 		$total_items = $wpdb->get_var( 'SELECT FOUND_ROWS()' );

@@ -237,7 +237,11 @@ class Autoblog_Addon {
 	 *
 	 * @return string
 	 */
-	public function get_simplepie_item_raw(SimplePie_Item $item ) {
+	public function get_simplepie_item_raw( $item ) {
+		if ( ! autoblog_is_simplepie_item( $item ) ) {
+			return '';
+		}
+
 		$content_namespaces = array(
 			SIMPLEPIE_NAMESPACE_ATOM_10                => 'content',
 			SIMPLEPIE_NAMESPACE_ATOM_03                => 'content',

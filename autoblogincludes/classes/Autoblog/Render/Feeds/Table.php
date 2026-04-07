@@ -46,7 +46,7 @@ class Autoblog_Render_Feeds_Table extends Autoblog_Render {
 		?><div class="wrap">
 			<div class="icon32" id="icon-edit"><br></div>
 			<h2>
-				<?php esc_html_e( 'Autoblog Feeds', 'autoblogtext' ) ?>
+				<?php esc_html_e( 'Autoblogga Feeds', 'autoblogtext' ) ?>
 				<a class="add-new-h2" href="<?php echo esc_url( $add_link ) ?>"><?php esc_html_e( 'Add New','autoblogtext' ) ?></a>
 			</h2>
 
@@ -95,11 +95,11 @@ class Autoblog_Render_Feeds_Table extends Autoblog_Render {
 		}
 
 		if ( isset( $_GET['processed'] ) && filter_input( INPUT_GET, 'processed', FILTER_VALIDATE_BOOLEAN ) ) {
-			echo '<div class="updated fade"><p>', esc_html__( 'The feed(s) has been processed successfully. Visit the Autoblog Dashboard for details.', 'autoblogtext' ), '</p></div>';
+			echo '<div class="updated fade"><p>', esc_html__( 'The feed(s) has been processed successfully. Visit the Autoblogga Dashboard for details.', 'autoblogtext' ), '</p></div>';
 		}
 
 		if ( isset( $_GET['launched'] ) && filter_input( INPUT_GET, 'launched', FILTER_VALIDATE_BOOLEAN ) ) {
-			echo '<div class="updated fade"><p>', esc_html__( 'The feed(s) processing has been launched in the background. Visit the Autoblog Dashboard for details.', 'autoblogtext' ), '</p></div>';
+			echo '<div class="updated fade"><p>', esc_html__( 'The feed(s) processing has been launched in the background. Visit the Autoblogga Dashboard for details.', 'autoblogtext' ), '</p></div>';
 		}
 	}
 

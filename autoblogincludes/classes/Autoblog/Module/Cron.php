@@ -105,7 +105,7 @@ class Autoblog_Module_Cron extends Autoblog_Module {
 	public function register_fatal_error_shutdown_handler() {
 		if ( $this->_feed_id ) {
 			$last_error = error_get_last();
-			if ( $last_error['type'] === E_ERROR ) {
+			if ( is_array( $last_error ) && isset( $last_error['type'] ) && E_ERROR === $last_error['type'] ) {
 				$this->_log_message( Autoblog_Plugin::LOG_PROCESSING_ERRORS, sprintf( '%s at %s:%d', $last_error['message'], $last_error['file'], $last_error['line'] ) );
 			}
 		}
@@ -229,11 +229,13 @@ class Autoblog_Module_Cron extends Autoblog_Module {
 			$time           = current_time( 'timestamp' );
 
 			$details = $this->_wpdb->get_var( sprintf( 'SELECT feed_meta FROM %s WHERE feed_id = %d', AUTOBLOG_TABLE_FEEDS, $feed_id ) );
-			if ( $details ) {
-				$details = @unserialize( $details );
-			}
+			$details = autoblog_maybe_unserialize_array( $details );
 
 			$details = apply_filters( 'autoblog_feed_details', $details, $feed_id );
+			if ( ! is_array( $details ) || empty( $details ) ) {
+				$this->_log_message( Autoblog_Plugin::LOG_PROCESSING_ERRORS, __( 'Feed settings are invalid or could not be decoded.', 'autoblogtext' ) );
+				continue;
+			}
 
 			// do not process the feed if we are not in the requested period to process
 			if ( ! $force ) {
@@ -253,7 +255,7 @@ class Autoblog_Module_Cron extends Autoblog_Module {
 				do_action( 'autoblog_pre_process_feed', $feed_id, $details );
 
 				$simplepie = $this->_fetch_feed( $details );
-				if ( is_a( $simplepie, 'SimplePie' ) ) {
+				if ( autoblog_is_simplepie_instance( $simplepie ) ) {
 					$amount = $this->_process_feed( $simplepie, $details );
 					if ( $amount ) {
 						$this->_log_message( Autoblog_Plugin::LOG_FEED_PROCESSED, $amount );
@@ -297,7 +299,11 @@ class Autoblog_Module_Cron extends Autoblog_Module {
 	 *
 	 * @param SimplePie $feed The actual instance of SimplePie class.
 	 */
-	public function setup_simplepie_options( SimplePie $feed ) {
+	public function setup_simplepie_options( $feed ) {
+		if ( ! is_object( $feed ) || ! method_exists( $feed, 'set_timeout' ) ) {
+			return;
+		}
+
 		$timeout = absint( AUTOBLOG_FEED_FETCHING_TIMEOUT );
 		$feed->set_timeout( $timeout ? $timeout : 10 );
 	}
@@ -313,7 +319,8 @@ class Autoblog_Module_Cron extends Autoblog_Module {
 	 * @param resource $curl The CURL resource.
 	 */
 	public function setup_curl_options( $curl ) {
-		if ( is_resource( $curl ) ) {
+		$is_curl_handle = class_exists( 'CurlHandle', false ) && $curl instanceof CurlHandle;
+		if ( is_resource( $curl ) || $is_curl_handle ) {
 			curl_setopt( $curl, CURLOPT_HTTPHEADER, array( 'Expect:' ) );
 		}
 	}
@@ -346,6 +353,8 @@ class Autoblog_Module_Cron extends Autoblog_Module {
 		}
 
 		$feed = fetch_feed( $details['url'] );
+		autoblog_setup_simplepie_aliases();
+
 		if ( is_wp_error( $feed ) ) {
 			$this->_log_message( Autoblog_Plugin::LOG_FETCHING_ERRORS, $feed->get_error_messages() );
 			$feed = false;
@@ -374,7 +383,7 @@ class Autoblog_Module_Cron extends Autoblog_Module {
 	 *
 	 * @return int The amount of importent feed items.
 	 */
-	private function _process_feed( SimplePie $feed, $details ) {
+	private function _process_feed( $feed, $details ) {
 		do_action( 'autoblog_feed_pre_process_setup', $feed, $details );
 
 		$max = isset( $details['poststoimport'] ) && (int) $details['poststoimport'] != 0
@@ -384,7 +393,7 @@ class Autoblog_Module_Cron extends Autoblog_Module {
 		$processed_count = 0;
 		for ( $x = 0; $x < $max; $x ++ ) {
 			$item = $feed->get_item( $x );
-			if ( $item instanceof SimplePie_Item ) {
+			if ( autoblog_is_simplepie_item( $item ) ) {
 				if ( $this->_check_item_content( $item, $details ) ) {
 					$update_duplicates = apply_filters( 'autoblog_update_duplicates', false, $details );
 					$post_id           = $this->_find_item_duplicate( $item, $update_duplicates );
@@ -412,7 +421,7 @@ class Autoblog_Module_Cron extends Autoblog_Module {
 	 *
 	 * @return int The post id if the feed item has already been imported, otherwise 0.
 	 */
-	private function _find_item_duplicate( SimplePie_Item $item, $update_duplicates ) {
+	private function _find_item_duplicate( $item, $update_duplicates ) {
 		// try to find whether we already imported this item or not
 		$checks = array();
 
@@ -487,7 +496,7 @@ class Autoblog_Module_Cron extends Autoblog_Module {
 	 *
 	 * @return boolean TRUE if feed item content matched, otherwise FALSE.
 	 */
-	private function _check_item_content( SimplePie_Item $item, $details ) {
+	private function _check_item_content( $item, $details ) {
 		$matchall     = $matchany = $matchphrase = $matchnone = $matchtags = $matchregex = true;
 		$item_content = trim( $item->get_title() ) . ' ' . trim( $item->get_content() );
 
@@ -584,7 +593,7 @@ class Autoblog_Module_Cron extends Autoblog_Module {
 	 *
 	 * @return int|boolean Operation log code on success, otherwise FALSE.
 	 */
-	private function _process_item( SimplePie_Item $item, $details, $post_id ) {
+	private function _process_item( $item, $details, $post_id ) {
 		if ( $post_id ) {
 			// looks like the item has already been imported, then try to update a post
 			$post = get_post( $post_id );
@@ -634,7 +643,7 @@ class Autoblog_Module_Cron extends Autoblog_Module {
 	 * @param array $details The array of feed details.
 	 * @param SimplePie_Item $item The feed item object.
 	 */
-	public function add_post_meta( $post_id, $details, SimplePie_Item $item ) {
+	public function add_post_meta( $post_id, $details, $item ) {
 		$feed_url = trim( $details['url'] );
 		$link     = trim( $item->get_permalink() );
 
@@ -752,7 +761,7 @@ class Autoblog_Module_Cron extends Autoblog_Module {
 	 *
 	 * @return array The post data.
 	 */
-	public function get_post_content_and_statuses( array $data, array $details, SimplePie_Item $item ) {
+	public function get_post_content_and_statuses( array $data, array $details, $item ) {
 		// post title
 		$data['post_title'] = trim( $item->get_title() );
 		// post content
@@ -810,7 +819,7 @@ class Autoblog_Module_Cron extends Autoblog_Module {
 	 *
 	 * @return array The post data.
 	 */
-	public function get_post_author_id( array $data, array $details, SimplePie_Item $item ) {
+	public function get_post_author_id( array $data, array $details, $item ) {
 		// do not override author id if it has been already found
 		if ( ! empty( $data['post_author'] ) ) {
 			return $data;
@@ -884,7 +893,7 @@ class Autoblog_Module_Cron extends Autoblog_Module {
 	 *
 	 * @return array The post data.
 	 */
-	public function get_post_dates( array $data, array $details, SimplePie_Item $item ) {
+	public function get_post_dates( array $data, array $details, $item ) {
 		// do not override dates if it has been already found
 		if ( ! empty( $data['post_date'] ) && ! empty( $data['post_date_gmt'] ) ) {
 			return $data;
@@ -924,7 +933,7 @@ class Autoblog_Module_Cron extends Autoblog_Module {
 	 * @param array $details The array of feed details.
 	 * @param SimplePie_Item $item The feed item object.
 	 */
-	public function add_post_taxonomies( $post_id, array $details, SimplePie_Item $item ) {
+	public function add_post_taxonomies( $post_id, array $details, $item ) {
 		$post_type = $details['posttype'];
 		$added     = array();
 

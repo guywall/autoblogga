@@ -66,8 +66,8 @@ class Autoblog_Render_Feeds_Form extends Autoblog_Render
     protected function _to_html()
     {
         $title = !empty($this->feed_id)
-            ? esc_html__('Edit Auto Blog Feed', 'autoblogtext')
-            : esc_html__('Create Auto Blog Feed', 'autoblogtext');
+            ? esc_html__('Edit Autoblogga Feed', 'autoblogtext')
+            : esc_html__('Create Autoblogga Feed', 'autoblogtext');
 
         ?>
         <div class="wrap">

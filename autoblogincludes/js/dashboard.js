@@ -1,8 +1,36 @@
-google.load('visualization', '1', {packages: ['corechart']});
-google.setOnLoadCallback(autoblogDrawChart);
+function autoblogRenderChartUnavailable() {
+	var chartRoot = document.getElementById('autoblog-dashboard-chart');
+
+	if (!chartRoot) {
+		return;
+	}
+
+	chartRoot.innerHTML = '<p class="autoblog-chart-unavailable">' + autoblog.chart_unavailable + '</p>';
+}
+
+function autoblogWhenChartsReady() {
+	if (window.google && google.charts && typeof google.charts.load === 'function') {
+		google.charts.load('current', {packages: ['corechart']});
+		google.charts.setOnLoadCallback(autoblogDrawChart);
+		return;
+	}
+
+	if (window.google && typeof google.load === 'function') {
+		google.load('visualization', '1', {packages: ['corechart']});
+		google.setOnLoadCallback(autoblogDrawChart);
+		return;
+	}
+
+	autoblogRenderChartUnavailable();
+}
 
 function autoblogDrawChart() {
 	var date, chart, table, i, today, stamp, imports, errors, processed;
+
+	if (!(window.google && google.visualization && typeof google.visualization.DataTable === 'function')) {
+		autoblogRenderChartUnavailable();
+		return;
+	}
 
 	today = new Date();
 
@@ -66,6 +94,8 @@ function autoblogDrawChart() {
 
 (function($) {
 	$(document).ready(function() {
+		autoblogWhenChartsReady();
+
 		$('.autoblog-log-feed > .autoblog-log-row').click(function() {
 			var parent = $(this).parent(), rows, height;
 
@@ -87,6 +117,10 @@ function autoblogDrawChart() {
 
 		$('.autoblog-log-feed-records').slimScroll({height: '400px'}).show();
 
-		$(window).resize(autoblogDrawChart);
+		$(window).resize(function() {
+			if (window.google && google.visualization) {
+				autoblogDrawChart();
+			}
+		});
 	});
 })(jQuery);
